@@ -88,27 +88,75 @@ const Mutation = objectType({
     t.nonNull.field('createPost', {
       type: 'Post',
       args: {
-        data: nonNull(
-          arg({
-            type: 'PostCreateInput',
-          }),
-        ),
+        title: nonNull(stringArg()),
+        content: nonNull(stringArg()),
+        author: nonNull(stringArg()),
       },
       resolve: (_, args, context) => {
         return context.prisma.post.create({
           data: {
-            id: args.data.id,
-            title: args.data.title,
-            content: args.data.content,
+            title: args.title,
+            content: args.content,
             author: {
-              
+              connect: { id: args.author },
             },
           },
         })
       },
     })
     // TODO: Add mutation to update post
+    t.nonNull.field('updatePost', {
+      type: 'Post',
+      args: {
+        id: nonNull(stringArg()),
+        title: nonNull(stringArg()),
+        content: nonNull(stringArg()),
+        author: nonNull(stringArg()),
+      },
+      resolve: async (_, args, context) => {
+        try {
+          const post = await context.prisma.post.findUnique({
+            where: { id: args.id || undefined },
+          })
+          return context.prisma.post.update({
+            where: { id: args.id || undefined },
+            data: {
+              title: args.title,
+              content: args.content,
+              author: {
+                connect: { id: args.author },
+              },
+            },
+          })
+        } catch (e) {
+          throw new Error(
+            `Post with ID ${args.id} does not exist in the database.`,
+          )
+        }
+        // return context.prisma.post.update({
+        //   data: {
+        //     id: args.id,
+        //     title: args.title,
+        //     content: args.content,
+        //     author: {
+        //       connect: { id: args.author },
+        //     },
+        //   },
+        // })
+      },
+    })
     // TODO: Add mutation to delete post
+    t.field('deletePost', {
+      type: 'Post',
+      args: {
+        id: nonNull(stringArg()),
+      },
+      resolve: (_, args, context) => {
+        return context.prisma.post.delete({
+          where: { id: args.id },
+        })
+      },
+    })
   },
 })
 
